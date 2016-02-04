@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Tags","Structure containing the tags of a sound."]],"trait":[["AudioTags","AudioTags trait implemented by all struct who can provides audio."]]});

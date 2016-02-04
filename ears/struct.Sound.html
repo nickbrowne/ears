@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Sound` struct in crate `ears`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Sound">
+
+    <title>ears::Sound - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>ears</a></p><script>window.sidebarCurrent = {name: 'Sound', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>ears</a>::<wbr><a class='struct' href=''>Sound</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-939' class='srclink' href='../src/ears/sound.rs.html#61-66' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Sound {
+    // some fields omitted
+}</pre><div class='docblock'><p>Play Sounds easily.</p>
+
+<p>Simple class to play sounds easily in 2 lines. Sounds are really light
+objects, the sound&#39;s data is entirely loaded into memory and can be shared between
+Sounds using the SoundData object.</p>
+
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1><pre class='rust rust-example-rendered'>
+<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>ears</span>;
+<span class='kw'>use</span> <span class='ident'>ears</span>::{<span class='ident'>Sound</span>, <span class='ident'>AudioController</span>};
+
+<span class='kw'>fn</span> <span class='ident'>main</span>() <span class='op'>-&gt;</span> () {
+   <span class='comment'>// Create a Sound with the path of the sound file.</span>
+   <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>snd</span> <span class='op'>=</span> <span class='ident'>Sound</span>::<span class='ident'>new</span>(<span class='string'>&quot;path/to/my/sound.ogg&quot;</span>).<span class='ident'>unwrap</span>();
+
+   <span class='comment'>// Play it</span>
+   <span class='ident'>snd</span>.<span class='ident'>play</span>();
+
+   <span class='comment'>// Wait until the sound stopped playing</span>
+   <span class='kw'>while</span> <span class='ident'>snd</span>.<span class='ident'>is_playing</span>() {}
+}</pre>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../ears/struct.Sound.html' title='ears::Sound'>Sound</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(path: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../ears/struct.Sound.html' title='ears::Sound'>Sound</a>&gt;</code></h4>
+<div class='docblock'><p>Default constructor for Sound struct.</p>
+
+<p>Create a new struct and an associated SoundData.</p>
+
+<h1 id='argument' class='section-header'><a href='#argument'>Argument</a></h1>
+<p><code>path</code> - The path of the sound file to create the SoundData.</p>
+
+<h1 id='return' class='section-header'><a href='#return'>Return</a></h1>
+<p>An Option with Some(Sound) if the Sound is created properly, or None if
+un error has occured.</p>
+
+<h1 id='example' class='section-header'><a href='#example'>Example</a></h1><pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>snd</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='ident'>ears</span>::<span class='ident'>Sound</span>::<span class='ident'>new</span>(<span class='string'>&quot;path/to/the/sound.ogg&quot;</span>) {
+    <span class='prelude-val'>Some</span>(<span class='ident'>snd</span>) <span class='op'>=&gt;</span> <span class='ident'>snd</span>,
+    <span class='prelude-val'>None</span>      <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Cannot load the sound from a file !&quot;</span>)
+};</pre>
+</div><h4 id='method.new_with_data' class='method'><code>fn <a href='#method.new_with_data' class='fnname'>new_with_data</a>(sound_data: <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html' title='core::cell::RefCell'>RefCell</a>&lt;<a class='struct' href='../ears/struct.SoundData.html' title='ears::SoundData'>SoundData</a>&gt;&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../ears/struct.Sound.html' title='ears::Sound'>Sound</a>&gt;</code></h4>
+<div class='docblock'><p>Create a new struct with a SoundData to associate.</p>
+
+<h1 id='argument-1' class='section-header'><a href='#argument-1'>Argument</a></h1>
+<p><code>sound_data</code> - The sound_data to associate to the Sound.</p>
+
+<h1 id='return-1' class='section-header'><a href='#return-1'>Return</a></h1>
+<p>An Option with Some(Sound) if the Sound is created properly, or None if
+un error has occured.</p>
+
+<h1 id='example-1' class='section-header'><a href='#example-1'>Example</a></h1><pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>ears</span>::{<span class='ident'>Sound</span>, <span class='ident'>SoundData</span>, <span class='ident'>AudioController</span>};
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>rc</span>::<span class='ident'>Rc</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>cell</span>::<span class='ident'>RefCell</span>;
+
+<span class='kw'>let</span> <span class='ident'>snd_data</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='ident'>SoundData</span>::<span class='ident'>new</span>(<span class='string'>&quot;path/to/the/sound.ogg&quot;</span>) {
+    <span class='prelude-val'>Some</span>(<span class='ident'>snd_data</span>) <span class='op'>=&gt;</span> <span class='ident'>Rc</span>::<span class='ident'>new</span>(<span class='ident'>RefCell</span>::<span class='ident'>new</span>(<span class='ident'>snd_data</span>)),
+    <span class='prelude-val'>None</span>           <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Cannot create the sound data !&quot;</span>)
+};
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>snd</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='ident'>Sound</span>::<span class='ident'>new_with_data</span>(<span class='ident'>snd_data</span>) {
+    <span class='prelude-val'>Some</span>(<span class='kw-2'>mut</span> <span class='ident'>snd</span>) <span class='op'>=&gt;</span> <span class='ident'>snd</span>.<span class='ident'>play</span>(),
+    <span class='prelude-val'>None</span>      <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;Cannot create a sound using a sound data !&quot;</span>)
+};</pre>
+</div><h4 id='method.get_datas' class='method'><code>fn <a href='#method.get_datas' class='fnname'>get_datas</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html' title='core::cell::RefCell'>RefCell</a>&lt;<a class='struct' href='../ears/struct.SoundData.html' title='ears::SoundData'>SoundData</a>&gt;&gt;</code></h4>
+<div class='docblock'><p>Get the sound datas.</p>
+
+<h1 id='return-2' class='section-header'><a href='#return-2'>Return</a></h1>
+<p>The SoundData associated to this Sound.</p>
+
+<h1 id='example-2' class='section-header'><a href='#example-2'>Example</a></h1><pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>snd</span> <span class='op'>=</span> <span class='ident'>ears</span>::<span class='ident'>Sound</span>::<span class='ident'>new</span>(<span class='string'>&quot;path/to/the/sound.ogg&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>snd_data</span> <span class='op'>=</span> <span class='ident'>snd</span>.<span class='ident'>get_datas</span>();</pre>
+</div><h4 id='method.set_datas' class='method'><code>fn <a href='#method.set_datas' class='fnname'>set_datas</a>(&amp;mut self, sound_data: <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/rc/struct.Rc.html' title='alloc::rc::Rc'>Rc</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/core/cell/struct.RefCell.html' title='core::cell::RefCell'>RefCell</a>&lt;<a class='struct' href='../ears/struct.SoundData.html' title='ears::SoundData'>SoundData</a>&gt;&gt;)</code></h4>
+<div class='docblock'><p>Set the sound datas.</p>
+
+<p>Doesn&#39;t work if the sound is currently playing.</p>
+
+<h1 id='argument-2' class='section-header'><a href='#argument-2'>Argument</a></h1>
+<p><code>sound_data</code> - The new sound_data</p>
+
+<h1 id='example-3' class='section-header'><a href='#example-3'>Example</a></h1><pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>snd1</span> <span class='op'>=</span> <span class='ident'>ears</span>::<span class='ident'>Sound</span>::<span class='ident'>new</span>(<span class='string'>&quot;path/to/the/sound.ogg&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>snd2</span> <span class='op'>=</span> <span class='ident'>ears</span>::<span class='ident'>Sound</span>::<span class='ident'>new</span>(<span class='string'>&quot;other/path/to/the/sound.ogg&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>snd_data</span> <span class='op'>=</span> <span class='ident'>snd1</span>.<span class='ident'>get_datas</span>();
+<span class='ident'>snd2</span>.<span class='ident'>set_datas</span>(<span class='ident'>snd_data</span>);</pre>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='../ears/trait.AudioTags.html' title='ears::AudioTags'>AudioTags</a> for <a class='struct' href='../ears/struct.Sound.html' title='ears::Sound'>Sound</a></code></h3><div class='impl-items'><h4 id='method.get_tags' class='method'><code>fn <a href='../ears/trait.AudioTags.html#method.get_tags' class='fnname'>get_tags</a>(&amp;self) -&gt; <a class='struct' href='../ears/struct.Tags.html' title='ears::Tags'>Tags</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='../ears/trait.AudioController.html' title='ears::AudioController'>AudioController</a> for <a class='struct' href='../ears/struct.Sound.html' title='ears::Sound'>Sound</a></code></h3><div class='impl-items'><h4 id='method.play' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.play' class='fnname'>play</a>(&amp;mut self)</code></h4>
+<h4 id='method.pause' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.pause' class='fnname'>pause</a>(&amp;mut self)</code></h4>
+<h4 id='method.stop' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.stop' class='fnname'>stop</a>(&amp;mut self)</code></h4>
+<h4 id='method.is_playing' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.is_playing' class='fnname'>is_playing</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.get_state' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_state' class='fnname'>get_state</a>(&amp;self) -&gt; <a class='enum' href='../ears/enum.State.html' title='ears::State'>State</a></code></h4>
+<h4 id='method.set_volume' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_volume' class='fnname'>set_volume</a>(&amp;mut self, volume: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>)</code></h4>
+<h4 id='method.get_volume' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_volume' class='fnname'>get_volume</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a></code></h4>
+<h4 id='method.set_min_volume' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_min_volume' class='fnname'>set_min_volume</a>(&amp;mut self, min_volume: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>)</code></h4>
+<h4 id='method.get_min_volume' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_min_volume' class='fnname'>get_min_volume</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a></code></h4>
+<h4 id='method.set_max_volume' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_max_volume' class='fnname'>set_max_volume</a>(&amp;mut self, max_volume: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>)</code></h4>
+<h4 id='method.get_max_volume' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_max_volume' class='fnname'>get_max_volume</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a></code></h4>
+<h4 id='method.set_looping' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_looping' class='fnname'>set_looping</a>(&amp;mut self, looping: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>)</code></h4>
+<h4 id='method.is_looping' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.is_looping' class='fnname'>is_looping</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.set_pitch' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_pitch' class='fnname'>set_pitch</a>(&amp;mut self, pitch: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>)</code></h4>
+<h4 id='method.get_pitch' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_pitch' class='fnname'>get_pitch</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a></code></h4>
+<h4 id='method.set_relative' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_relative' class='fnname'>set_relative</a>(&amp;mut self, relative: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>)</code></h4>
+<h4 id='method.is_relative' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.is_relative' class='fnname'>is_relative</a>(&amp;mut self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.set_position' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_position' class='fnname'>set_position</a>(&amp;mut self, position: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>; 3]</a>)</code></h4>
+<h4 id='method.get_position' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_position' class='fnname'>get_position</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>; 3]</a></code></h4>
+<h4 id='method.set_direction' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_direction' class='fnname'>set_direction</a>(&amp;mut self, direction: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>; 3]</a>)</code></h4>
+<h4 id='method.get_direction' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_direction' class='fnname'>get_direction</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.array.html'>[<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>; 3]</a></code></h4>
+<h4 id='method.set_max_distance' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_max_distance' class='fnname'>set_max_distance</a>(&amp;mut self, max_distance: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>)</code></h4>
+<h4 id='method.get_max_distance' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_max_distance' class='fnname'>get_max_distance</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a></code></h4>
+<h4 id='method.set_reference_distance' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_reference_distance' class='fnname'>set_reference_distance</a>(&amp;mut self, ref_distance: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>)</code></h4>
+<h4 id='method.get_reference_distance' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_reference_distance' class='fnname'>get_reference_distance</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a></code></h4>
+<h4 id='method.set_attenuation' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.set_attenuation' class='fnname'>set_attenuation</a>(&amp;mut self, attenuation: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a>)</code></h4>
+<h4 id='method.get_attenuation' class='method'><code>fn <a href='../ears/trait.AudioController.html#method.get_attenuation' class='fnname'>get_attenuation</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.f32.html'>f32</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html' title='core::ops::Drop'>Drop</a> for <a class='struct' href='../ears/struct.Sound.html' title='ears::Sound'>Sound</a></code></h3><div class='impl-items'><h4 id='method.drop' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Drop.html#method.drop' class='fnname'>drop</a>(&amp;mut self)</code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "ears";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

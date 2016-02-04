@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["State","The differents states in which a sound can be."]]});

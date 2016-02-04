@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["RecordContext","The context needed to initialize a new Recorder"]]});
