@@ -138,6 +138,17 @@ impl OpenAlData {
         }
     }
 
+    /// Check if AL_SOFT_direct_channels extension is present
+    ///
+    /// # Return
+    /// true if the extension is present, otherwise false.
+    pub fn direct_channel_capable() -> bool {
+        let c_str = CString::new("AL_SOFT_direct_channels").unwrap();
+        unsafe {
+            ffi::alIsExtensionPresent(c_str.as_ptr()) == ffi::AL_TRUE
+        }
+    }
+
     /// Check if the input context is created.
     ///
     /// This function check if the input OpenAl context is already created.
