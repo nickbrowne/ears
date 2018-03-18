@@ -115,6 +115,11 @@ impl Music {
         // create the buffers
         al::alGenBuffers(2, &mut buffer_ids[0]);
 
+        // Set direct mode for the source if capable
+        if OpenAlData::direct_channel_capable() {
+            al::alSourcei(source_id, ffi::AL_DIRECT_CHANNELS_SOFT, 1);
+        }
+
         // Retrieve format information
         let format =  match al::get_channels_format(infos.channels) {
             Some(fmt) => fmt,

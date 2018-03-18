@@ -34,9 +34,12 @@ pub mod ffi {
     use libc::{c_char, c_void, intptr_t };
 
     /// OpenAL types
+    pub type ALboolean = c_char;
     pub type ALCboolean = c_char;
     pub type ALCdevicePtr = intptr_t;
     pub type ALCcontextPtr = intptr_t;
+    pub const AL_TRUE:                ALboolean  = 1;
+    pub const AL_FALSE:               ALboolean  = 0;
     pub const ALC_TRUE:               ALCboolean  = 1;
     pub const ALC_FALSE:              ALCboolean  = 0;
 
@@ -66,6 +69,7 @@ pub mod ffi {
     pub const AL_BUFFER:              i32         = 0x1009;
     pub const AL_BUFFERS_PROCESSED:   i32         = 0x1016;
     pub const AL_BUFFERS_QUEUED:      i32         = 0x1015;
+    pub const AL_DIRECT_CHANNELS_SOFT:i32         = 0x1033;
 
     /// Error identifiers
     pub const AL_NO_ERROR:            i32         = 0;
@@ -129,6 +133,7 @@ pub mod ffi {
         pub fn alcCaptureSamples(devide: ALCdevicePtr, buffer: *mut c_void,sample: i32);
 
         /// extension check
+        pub fn alIsExtensionPresent(extension: *const c_char) -> ALboolean;
         pub fn alcIsExtensionPresent(device: ALCdevicePtr, extension: *const c_char) -> ALCboolean;
 
         /// Buffers functions
