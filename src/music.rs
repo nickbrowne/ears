@@ -197,8 +197,8 @@ impl Music {
             let mut is_looping = is_looping_clone;
 
             while status != ffi::AL_STOPPED {
-                // wait a bit
-                sleep(Duration::from_millis(50));
+                // exacerbate the problem by increasing sleep time
+                sleep(Duration::from_millis(100));
                 if status == ffi::AL_PLAYING {
                     if let Ok(new_is_looping) = looping_receiver.try_recv() {
                         is_looping = new_is_looping;
@@ -206,16 +206,22 @@ impl Music {
                     al::alGetSourcei(al_source,
                                      ffi::AL_BUFFERS_PROCESSED,
                                      &mut i);
+
+                    println!("buffers_processed: {:?}", i);
+
                     if i != 0 {
                         samples.clear();
                         al::alSourceUnqueueBuffers(al_source, 1, &mut buf);
                         let mut read = file.read_i16(&mut samples[..], sample_t_r as i64) *
                                        mem::size_of::<i16>() as i64;
+
+                        println!("read: {:?}", read);
                         if is_looping && read == 0 {
                             file.seek(0, SeekSet);
                             read = file.read_i16(&mut samples[..], sample_t_r as i64) *
                                    mem::size_of::<i16>() as i64;
                         }
+
                         al::alBufferData(buf,
                                          sample_format,
                                          samples.as_ptr() as *mut c_void,
