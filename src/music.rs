@@ -192,7 +192,7 @@ impl Music {
             let mut file : SndFile = port.recv().ok().unwrap();
             let mut samples = vec![0i16; sample_t_r as usize];
             let mut status = ffi::AL_PLAYING;
-            let mut i = 0;
+            let mut buffers_processed = 0;
             let mut buf = 0;
             let mut is_looping = is_looping_clone;
 
@@ -205,8 +205,8 @@ impl Music {
                     }
                     al::alGetSourcei(al_source,
                                      ffi::AL_BUFFERS_PROCESSED,
-                                     &mut i);
-                    if i != 0 {
+                                     &mut buffers_processed);
+                    if buffers_processed != 0 {
                         samples.clear();
                         al::alSourceUnqueueBuffers(al_source, 1, &mut buf);
                         let mut read = file.read_i16(&mut samples[..], sample_t_r as i64) *
