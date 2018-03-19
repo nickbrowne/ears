@@ -207,19 +207,24 @@ impl Music {
                                      ffi::AL_BUFFERS_PROCESSED,
                                      &mut buffers_processed);
                     if buffers_processed != 0 {
-                        samples.clear();
                         al::alSourceUnqueueBuffers(al_source, 1, &mut buf);
-                        let mut read = file.read_i16(&mut samples[..], sample_t_r as i64) *
-                                       mem::size_of::<i16>() as i64;
-                        if is_looping && read == 0 {
+                        let read = file.read_i16(&mut samples[..], sample_t_r as i64);
+
+                        if is_looping && read < sample_t_r as i64 {
+                            let additional_read = sample_t_r as i64 - read;
+
                             file.seek(0, SeekSet);
-                            read = file.read_i16(&mut samples[..], sample_t_r as i64) *
-                                   mem::size_of::<i16>() as i64;
+                            file.read_i16(&mut samples[read as usize..], additional_read);
+                        } else if read == 0 {
+                            // if we're not looping and we've reached
+                            // the end of the file, don't send any
+                            // more samples.
+                            samples.clear();
                         }
                         al::alBufferData(buf,
                                          sample_format,
                                          samples.as_ptr() as *mut c_void,
-                                         read as i32,
+                                         samples.len() as i32 * mem::size_of::<i16>() as i32,
                                          sample_rate);
                         al::alSourceQueueBuffers(al_source, 1, &buf);
                     }
