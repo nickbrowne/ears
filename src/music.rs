@@ -69,7 +69,7 @@ pub struct Music {
     /// Information of the file
     file_infos: SndInfo,
     /// Quantity of sample to read each time
-    sample_to_read: i32,
+    sample_to_read: i64,
     /// Format of the sample
     sample_format: i32,
     /// Audio tags
@@ -134,8 +134,8 @@ impl Music {
             al_source: source_id,
             al_buffers: buffer_ids,
             file: Some(file),
+            sample_to_read: 2 * infos.frames,
             file_infos: infos,
-            sample_to_read: 50000,
             sample_format: format,
             sound_tags: sound_tags,
             is_looping: false,
@@ -157,7 +157,7 @@ impl Music {
 
         // full buff1
         let mut len = mem::size_of::<i16>() *
-            self.file.as_mut().unwrap().read_i16(&mut samples[..], sample_t_r as i64) as usize;
+            self.file.as_mut().unwrap().read_i16(&mut samples[..], sample_t_r) as usize;
         al::alBufferData(al_buffers[0],
                          sample_format,
                          samples.as_ptr() as *mut c_void,
@@ -167,7 +167,7 @@ impl Music {
         // full buff2
         samples.clear();
         len = mem::size_of::<i16>() *
-            self.file.as_mut().unwrap().read_i16(&mut samples[..], sample_t_r as i64) as usize;
+            self.file.as_mut().unwrap().read_i16(&mut samples[..], sample_t_r) as usize;
         al::alBufferData(al_buffers[1],
                          sample_format,
                          samples.as_ptr() as *mut c_void,
@@ -208,10 +208,10 @@ impl Music {
                                      &mut buffers_processed);
                     if buffers_processed != 0 {
                         al::alSourceUnqueueBuffers(al_source, 1, &mut buf);
-                        let read = file.read_i16(&mut samples[..], sample_t_r as i64);
+                        let read = file.read_i16(&mut samples[..], sample_t_r);
 
-                        if is_looping && read < sample_t_r as i64 {
-                            let additional_read = sample_t_r as i64 - read;
+                        if is_looping && read < sample_t_r {
+                            let additional_read = sample_t_r - read;
 
                             file.seek(0, SeekSet);
                             file.read_i16(&mut samples[read as usize..], additional_read);
