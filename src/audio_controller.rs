@@ -51,6 +51,22 @@ pub trait AudioController {
     fn get_state(&self) -> State;
 
     /**
+     * Set the playback position in the Music.
+     *
+     * # Argument
+     * * `offset` - The time at which to seek, in seconds
+     */
+    fn set_offset(&mut self, offset: f32) -> ();
+
+    /**
+     * Get the current position in the Music.
+     *
+     * # Return
+     * The time at which the Music is currently playing
+     */
+    fn get_offset(&self) -> f32;
+
+    /**
      * Set the volume of the Audio Source.
      *
      * A value of 1.0 means unattenuated. Each division by 2 equals an attenuation

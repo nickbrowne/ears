@@ -56,6 +56,7 @@ pub mod ffi {
     pub const AL_MAX_DISTANCE:        i32         = 0x1023;
     pub const AL_REFERENCE_DISTANCE:  i32         = 0x1020;
     pub const AL_ROLLOFF_FACTOR:      i32         = 0x1021;
+    pub const AL_SEC_OFFSET:          i32         = 0x1024;
 
     /// Sound format
     pub const AL_FORMAT_MONO16:       i32         = 0x1101;
