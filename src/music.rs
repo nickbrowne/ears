@@ -27,6 +27,7 @@ use std::thread;
 use std::time::Duration;
 use libc::c_void;
 use std::vec::Vec;
+use std::sync::{Arc, RwLock};
 use std::sync::mpsc::{channel, Sender, Receiver};
 
 use internal::OpenAlData;
@@ -78,6 +79,8 @@ pub struct Music {
     sample_format: i32,
     /// Audio tags
     sound_tags: Tags,
+    /// Current offset in seconds into the music
+    offset: Arc<RwLock<f32>>,
 
     is_looping: bool,
     /// Channel to tell the thread, if is_looping changed
@@ -197,6 +200,7 @@ impl Music {
             file_infos: infos,
             sample_format: format,
             sound_tags: sound_tags,
+            offset: Arc::new(RwLock::new(0.0)),
             is_looping: false,
             looping_sender: None,
             offset_sender: None,
@@ -249,6 +253,7 @@ impl Music {
         self.looping_sender = Some(looping_sender);
         self.offset_sender = Some(offset_sender);
 
+        let offset_handle = Arc::clone(&self.offset);
         let is_looping_clone = self.is_looping.clone();
 
         self.thread_handle = Some(thread::spawn(move|| {
@@ -268,6 +273,11 @@ impl Music {
                 // wait a bit
                 sleep(Duration::from_millis(50));
                 if status == ffi::AL_PLAYING {
+                    // update the offset
+                    if let Ok(mut offset) = offset_handle.write() {
+                      *offset = cursor as f32 / sample_rate as f32;
+                    }
+
                     if let Ok(new_is_looping) = looping_receiver.try_recv() {
                         is_looping = new_is_looping;
                     }
@@ -428,11 +438,10 @@ impl AudioController for Music {
      * The time at which the Music is currently playing
      */
     fn get_offset(&self) -> f32 {
-        check_openal_context!(0.);
-
-        let mut offset : f32 = 0.;
-        al::alGetSourcef(self.al_source, ffi::AL_SEC_OFFSET, &mut offset);
-        offset
+      match self.offset.read() {
+        Ok(offset) => *offset,
+        _ => -1.0,
+      }
     }
 
     /**
