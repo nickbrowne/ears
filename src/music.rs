@@ -262,6 +262,7 @@ impl Music {
             let mut buffers_queued = 0;
             let mut buf = 0;
             let mut is_looping = is_looping_clone;
+            let mut offset_shift_restart = false;
 
             while status != ffi::AL_STOPPED {
                 // wait a bit
@@ -272,6 +273,11 @@ impl Music {
                     }
 
                     if let Ok(offset) = offset_receiver.try_recv() {
+                        // If we shift the offset, we need to stop and restart the source
+                        // so that we can swap out the buffers in an instantaneous manner
+                        al::alSourceStop(al_source);
+                        offset_shift_restart = true;
+
                         // calculate the new cursor
                         //
                         // TODO: improve precision truncation here
@@ -286,19 +292,25 @@ impl Music {
                                      ffi::AL_BUFFERS_PROCESSED,
                                      &mut buffers_processed);
 
-                    if buffers_processed != 0 {
-                        al::alSourceUnqueueBuffers(al_source, 1, &mut buf);
+                    for _ in 0..buffers_processed {
+                      al::alSourceUnqueueBuffers(al_source, 1, &mut buf);
 
-                        samples.clear();
+                      samples.clear();
 
-                        cursor = fill_buffer(&mut samples, &mut file, cursor, is_looping);
+                      cursor = fill_buffer(&mut samples, &mut file, cursor, is_looping);
 
-                        al::alBufferData(buf,
-                                         sample_format,
-                                         samples.as_ptr() as *mut c_void,
-                                         (mem::size_of::<i16>() * samples.len()) as i32,
-                                         sample_rate);
-                        al::alSourceQueueBuffers(al_source, 1, &buf);
+                      al::alBufferData(buf,
+                                       sample_format,
+                                       samples.as_ptr() as *mut c_void,
+                                       (mem::size_of::<i16>() * samples.len()) as i32,
+                                       sample_rate);
+                      al::alSourceQueueBuffers(al_source, 1, &buf);
+                    }
+
+                    // After buffer refill restart
+                    if offset_shift_restart {
+                        al::alSourcePlay(al_source);
+                        offset_shift_restart = false;
                     }
                 }
                 // Get source status
