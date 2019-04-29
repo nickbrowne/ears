@@ -83,6 +83,9 @@ pub struct Music {
     /// Channel to tell the thread, if is_looping changed
     looping_sender: Option<Sender<bool>>,
 
+    /// Channel to tell the thread to set offset
+    offset_sender: Option<Sender<f32>>,
+
     /// Thread which streams the music file
     thread_handle: Option<thread::JoinHandle<()>>,
 }
@@ -196,6 +199,7 @@ impl Music {
             sound_tags: sound_tags,
             is_looping: false,
             looping_sender: None,
+            offset_sender: None,
             thread_handle: None,
         })
     }
@@ -240,7 +244,11 @@ impl Music {
         al::alSourcePlay(al_source);
 
         let (looping_sender, looping_receiver): (Sender<bool>, Receiver<bool>) = channel();
+        let (offset_sender, offset_receiver): (Sender<f32>, Receiver<f32>) = channel();
+
         self.looping_sender = Some(looping_sender);
+        self.offset_sender = Some(offset_sender);
+
         let is_looping_clone = self.is_looping.clone();
 
         self.thread_handle = Some(thread::spawn(move|| {
@@ -261,6 +269,13 @@ impl Music {
                 if status == ffi::AL_PLAYING {
                     if let Ok(new_is_looping) = looping_receiver.try_recv() {
                         is_looping = new_is_looping;
+                    }
+
+                    if let Ok(offset) = offset_receiver.try_recv() {
+                        // calculate the new cursor
+                        //
+                        // TODO: improve precision truncation here
+                        cursor = offset as i64 * sample_rate as i64;
                     }
 
                     al::alGetSourcei(al_source,
@@ -388,9 +403,9 @@ impl AudioController for Music {
      * * `offset` - The time at which to seek, in seconds
      */
     fn set_offset(&mut self, offset: f32) -> () {
-        check_openal_context!(());
-
-        al::alSourcef(self.al_source, ffi::AL_SEC_OFFSET, offset);
+        if let Some(ref sender) = self.offset_sender {
+            sender.send(offset);
+        }
     }
 
     /**
