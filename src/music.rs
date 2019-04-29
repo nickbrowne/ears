@@ -278,10 +278,11 @@ impl Music {
                         al::alSourceStop(al_source);
                         offset_shift_restart = true;
 
-                        // calculate the new cursor
-                        //
-                        // TODO: improve precision truncation here
-                        cursor = offset as i64 * sample_rate as i64;
+                        // Calculate the new cursor with reasonable accuracy
+                        let frames = file.get_sndinfo().frames as f32;
+                        let duration_in_seconds = frames / sample_rate as f32;
+
+                        cursor = (frames * offset / duration_in_seconds) as i64;
                     }
 
                     al::alGetSourcei(al_source,
