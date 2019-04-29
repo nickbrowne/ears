@@ -103,46 +103,39 @@ pub struct Music {
 // in each case.
 //
 // ref: http://www.mega-nerd.com/libsndfile/api.html#read
-fn fill_buffer(samples: &mut Vec<i16>, sndfile: &mut SndFile, start_frame: i64, is_looping: bool) -> i64 {
-  println!("filling starting from {}...", start_frame);
-
-  // first, find where the buffer is currently filled to
+//
+// # Return:
+// cursor into the file on disk
+fn fill_buffer(samples: &mut Vec<i16>, sndfile: &mut SndFile, cursor: i64, is_looping: bool) -> i64 {
+  // First, find where the buffer is currently filled to
   let buffer_position = samples.len();
-  println!("buffer position: {}", buffer_position);
 
-  // and how many channels there are (TODO: is this actually necessary?)
+  // Move the sound file to where we want to read from
+  sndfile.seek(cursor, SeekSet);
+
+  // Read data from sound file into the buffer, from the current buffer position onwards
+  let read_amount = ((samples.capacity() - samples.len()) as i64);
+  let read_length = sndfile.read_i16(&mut samples[buffer_position..], read_amount) as usize;
+
+  // Update the vector length manually
+  unsafe { samples.set_len(buffer_position + read_length); }
+
   let channels = sndfile.get_sndinfo().channels as i64;
   let frames = sndfile.get_sndinfo().frames;
 
-  println!("total frames: {}", frames);
-
-  // move the sound file to where we want to read from
-  sndfile.seek(start_frame, SeekSet);
-
-  // read data from sound file into the buffer
-  let read_amount = ((samples.capacity() - samples.len()) as i64);
-  // println!("reading amount... {}", read_amount);
-  let read_length = sndfile.read_i16(&mut samples[buffer_position..], read_amount) as usize;
-
-  // update the vector length
-  unsafe { samples.set_len(buffer_position + read_length); }
-
-  // repeat until the buffer length matches it's capacity
-  println!("read length: {}", read_length);
-  println!("buffer capacity: {}, length: {}", samples.capacity(), samples.len());
-
-  // let cursor = (start_frame + (read_length) as i64) % frames;
-
-
-  let cursor = (start_frame + read_length as i64 / channels) % frames;
-  // let cursor = read_length as i64;
-
-  println!("cursor: {}", cursor);
+  // Calculate where the next cursor is at, based on how many 'items' were read
+  // divided by the channels in the source sound file.
+  //
+  // Modulo on frames ensure that the cursor will "wrap around" once it
+  // reaches the end of the file.
+  let next_cursor = (cursor + read_length as i64 / channels) % frames;
 
   if samples.len() == samples.capacity() {
-      cursor // precision problem?
+      // If we've reached capacity in the buffer, return the cursor
+      next_cursor
   } else {
-      fill_buffer(samples, sndfile, cursor, is_looping)
+      // Otherwise keep recursing until buffer is full
+      fill_buffer(samples, sndfile, next_cursor, is_looping)
   }
 }
 
@@ -193,8 +186,6 @@ impl Music {
 
         let sound_tags = get_sound_tags(&*file);
 
-        println!("frames: {}", infos.frames);
-
         Ok(Music {
             al_source: source_id,
             al_buffers: buffer_ids,
@@ -220,10 +211,10 @@ impl Music {
         // create sample buffer and reserve the exact capacity we need
         let mut samples: Vec<i16> = Vec::with_capacity(sample_t_r as usize);
 
-        // the cursor keeps track of where we are in large files
+        // the cursor keeps track of where we are in large files and lets
+        // us get/set the offset without loading the whole sound data at once
         let mut cursor = 0;
 
-        println!("buffer 1");
         cursor = fill_buffer(&mut samples, &mut self.file.as_mut().unwrap(), cursor, self.is_looping);
 
         al::alBufferData(al_buffers[0],
@@ -234,7 +225,6 @@ impl Music {
 
         samples.clear();
 
-        println!("buffer 2");
         cursor = fill_buffer(&mut samples, &mut self.file.as_mut().unwrap(), cursor, self.is_looping);
 
         al::alBufferData(al_buffers[1],
@@ -259,7 +249,6 @@ impl Music {
                 Err(err)    => { println!("{}", err);}
             };
             let mut file : SndFile = port.recv().ok().unwrap();
-            // let mut samples = vec![0i16; sample_t_r as usize];
             let mut status = ffi::AL_PLAYING;
             let mut buffers_processed = 0;
             let mut buffers_queued = 0;
@@ -282,13 +271,11 @@ impl Music {
                                      ffi::AL_BUFFERS_PROCESSED,
                                      &mut buffers_processed);
 
-                    // println!("queued {}, processed {}", buffers_queued, buffers_processed);
-
                     if buffers_processed != 0 {
                         al::alSourceUnqueueBuffers(al_source, 1, &mut buf);
 
                         samples.clear();
-                        println!("filling buffer {} at {}", buf, cursor);
+
                         cursor = fill_buffer(&mut samples, &mut file, cursor, is_looping);
 
                         al::alBufferData(buf,
