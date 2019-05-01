@@ -27,7 +27,8 @@ use std::thread;
 use std::time::Duration;
 use libc::c_void;
 use std::vec::Vec;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::mpsc::{channel, Sender, Receiver};
 
 use internal::OpenAlData;
@@ -79,9 +80,11 @@ pub struct Music {
     sample_format: i32,
     /// Audio tags
     sound_tags: Tags,
-    /// Current offset in seconds into the music
-    offset: Arc<RwLock<f32>>,
-
+    /// Current cursor into the music file
+    cursor: Arc<AtomicI64>,
+    /// State
+    state: State,
+    /// Whether this music is looping or not
     is_looping: bool,
     /// Channel to tell the thread, if is_looping changed
     looping_sender: Option<Sender<bool>>,
@@ -109,15 +112,13 @@ pub struct Music {
 // in each case.
 //
 // ref: http://www.mega-nerd.com/libsndfile/api.html#read
-//
-// # Return:
-// cursor into the file on disk
-fn fill_buffer(samples: &mut Vec<i16>, sndfile: &mut SndFile, cursor: i64, is_looping: bool) -> i64 {
+fn fill_buffer(samples: &mut Vec<i16>, sndfile: &mut SndFile, cursor: Arc<AtomicI64>, is_looping: bool) {
   // First, find where the buffer is currently filled to
   let buffer_position = samples.len();
+  let cursor_position = cursor.load(Ordering::Relaxed);
 
   // Move the sound file to where we want to read from
-  sndfile.seek(cursor, SeekSet);
+  sndfile.seek(cursor_position, SeekSet);
 
   // Read data from sound file into the buffer, from the current buffer position onwards
   let read_amount = ((samples.capacity() - samples.len()) as i64);
@@ -134,14 +135,11 @@ fn fill_buffer(samples: &mut Vec<i16>, sndfile: &mut SndFile, cursor: i64, is_lo
   //
   // Modulo on frames ensure that the cursor will "wrap around" once it
   // reaches the end of the file.
-  let next_cursor = (cursor + read_length as i64 / channels) % frames;
+  cursor.store((cursor_position + read_length as i64 / channels) % frames, Ordering::Relaxed);
 
-  if samples.len() == samples.capacity() {
-      // If we've reached capacity in the buffer, return the cursor
-      next_cursor
-  } else {
-      // Otherwise keep recursing until buffer is full
-      fill_buffer(samples, sndfile, next_cursor, is_looping)
+  // If we haven't reached capacity yet, keep recursing
+  if samples.len() != samples.capacity() {
+    fill_buffer(samples, sndfile, cursor, is_looping)
   }
 }
 
@@ -200,7 +198,8 @@ impl Music {
             file_infos: infos,
             sample_format: format,
             sound_tags: sound_tags,
-            offset: Arc::new(RwLock::new(0.0)),
+            cursor: Arc::new(AtomicI64::new(0)),
+            state: Initial,
             is_looping: false,
             looping_sender: None,
             offset_sender: None,
@@ -219,11 +218,7 @@ impl Music {
         // create sample buffer and reserve the exact capacity we need
         let mut samples: Vec<i16> = Vec::with_capacity(sample_t_r as usize);
 
-        // the cursor keeps track of where we are in large files and lets
-        // us get/set the offset without loading the whole sound data at once
-        let mut cursor = 0;
-
-        cursor = fill_buffer(&mut samples, &mut self.file.as_mut().unwrap(), cursor, self.is_looping);
+        fill_buffer(&mut samples, &mut self.file.as_mut().unwrap(), self.cursor.clone(), self.is_looping);
 
         al::alBufferData(al_buffers[0],
                          sample_format,
@@ -233,7 +228,7 @@ impl Music {
 
         samples.clear();
 
-        cursor = fill_buffer(&mut samples, &mut self.file.as_mut().unwrap(), cursor, self.is_looping);
+        fill_buffer(&mut samples, &mut self.file.as_mut().unwrap(), self.cursor.clone(), self.is_looping);
 
         al::alBufferData(al_buffers[1],
                          sample_format,
@@ -253,7 +248,7 @@ impl Music {
         self.looping_sender = Some(looping_sender);
         self.offset_sender = Some(offset_sender);
 
-        let offset_handle = Arc::clone(&self.offset);
+        let cursor = self.cursor.clone();
         let is_looping_clone = self.is_looping.clone();
 
         self.thread_handle = Some(thread::spawn(move|| {
@@ -273,11 +268,6 @@ impl Music {
                 // wait a bit
                 sleep(Duration::from_millis(50));
                 if status == ffi::AL_PLAYING {
-                    // update the offset
-                    if let Ok(mut offset) = offset_handle.write() {
-                      *offset = cursor as f32 / sample_rate as f32;
-                    }
-
                     if let Ok(new_is_looping) = looping_receiver.try_recv() {
                         is_looping = new_is_looping;
                     }
@@ -292,7 +282,7 @@ impl Music {
                         let frames = file.get_sndinfo().frames as f32;
                         let duration_in_seconds = frames / sample_rate as f32;
 
-                        cursor = (frames * offset / duration_in_seconds) as i64;
+                        cursor.store((frames * offset / duration_in_seconds) as i64, Ordering::Relaxed);
                     }
 
                     al::alGetSourcei(al_source,
@@ -308,7 +298,7 @@ impl Music {
 
                       samples.clear();
 
-                      cursor = fill_buffer(&mut samples, &mut file, cursor, is_looping);
+                      fill_buffer(&mut samples, &mut file, cursor.clone(), is_looping);
 
                       al::alBufferData(buf,
                                        sample_format,
@@ -406,6 +396,8 @@ impl AudioController for Music {
      * The state of the music as a variant of the enum State
      */
     fn get_state(&self) -> State {
+        // TODO: maintain our own state, since behind the scenes we
+        // may be stopping and starting the source to unqueue buffers
         check_openal_context!(Initial);
 
         let state  = al::alGetState(self.al_source);
@@ -438,10 +430,21 @@ impl AudioController for Music {
      * The time at which the Music is currently playing
      */
     fn get_offset(&self) -> f32 {
-      match self.offset.read() {
-        Ok(offset) => *offset,
-        _ => -1.0,
-      }
+      check_openal_context!(0.);
+      let mut offset_into_buffers: f32 = 0.;
+
+      al::alGetSourcef(self.al_source, ffi::AL_SEC_OFFSET, &mut offset_into_buffers);
+
+      // Becaused the source is playing buffered audio, we need to calculate
+      // the offset in seconds ourselves.
+      let cursor = self.cursor.load(Ordering::Relaxed) as f32;
+      let sample_rate = self.file_infos.samplerate as f32;
+      let channels = self.file_infos.channels as f32;
+
+      let buffered_amount = self.sample_to_read as f32;
+      let buffer_progress = buffered_amount / channels * offset_into_buffers;
+
+      (cursor - buffered_amount + buffer_progress) / sample_rate
     }
 
     /**
