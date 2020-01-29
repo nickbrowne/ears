@@ -64,19 +64,26 @@ pub struct Tags {
     pub genre: String
 }
 
-pub fn empty() -> Tags {
-    Tags {
-        title: "".to_string(),
-        copyright: "".to_string(),
-        software: "".to_string(),
-        artist: "".to_string(),
-        comment: "".to_string(),
-        date: "".to_string(),
-        album: "".to_string(),
-        license: "".to_string(),
-        track_number: "".to_string(),
-        genre: "".to_string()
+impl Default for Tags {
+    fn default() -> Tags {
+        Tags {
+            title: "".to_string(),
+            copyright: "".to_string(),
+            software: "".to_string(),
+            artist: "".to_string(),
+            comment: "".to_string(),
+            date: "".to_string(),
+            album: "".to_string(),
+            license: "".to_string(),
+            track_number: "".to_string(),
+            genre: "".to_string()
+        }
     }
+}
+
+#[deprecated(since = "0.7.1", note = "Please use Default::default() instead"]
+pub fn empty() -> Tags {
+    Default::default()
 }
 
 pub fn get_sound_tags(file: &SndFile) -> Tags {
