@@ -21,8 +21,8 @@
 
 //! Play Sounds easily.
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use audio_controller::AudioController;
@@ -66,7 +66,7 @@ pub struct Sound {
     /// The internal OpenAl source identifier
     al_source: u32,
     /// The SoundData associated to the Sound.
-    sound_data: Rc<RefCell<SoundData>>,
+    sound_data: Arc<Mutex<SoundData>>,
 }
 
 impl Sound {
@@ -94,7 +94,7 @@ impl Sound {
         check_openal_context!(Err(SoundError::InvalidOpenALContext));
 
         let sound_data = SoundData::new(path)?;
-        let sound_data = Rc::new(RefCell::new(sound_data));
+        let sound_data = Arc::new(Mutex::new(sound_data));
         Sound::new_with_data(sound_data)
     }
 
@@ -111,37 +111,38 @@ impl Sound {
      * # Example
      * ```ignore
      * use ears::{Sound, SoundData, SoundError, AudioController};
-     * use std::rc::Rc;
-     * use std::cell::RefCell;
+     * use std::sync::{Mutex, Arc};
      *
      * fn main() -> Result<(), SoundError> {
-     *     let data = Rc::new(RefCell::new(SoundData::new("path/to/the/sound.ogg")?));
+     *     let data = Arc::new(Mutex::new(SoundData::new("path/to/the/sound.ogg")?));
      *     let sound = Sound::new_with_data(data)?;
      *     Ok(())
      * }
      * ```
      */
-    pub fn new_with_data(sound_data: Rc<RefCell<SoundData>>) -> Result<Sound, SoundError> {
+    pub fn new_with_data(sound_data: Arc<Mutex<SoundData>>) -> Result<Sound, SoundError> {
         check_openal_context!(Err(SoundError::InvalidOpenALContext));
 
         let mut source_id = 0;
         // create the source
         al::alGenSources(1, &mut source_id);
         // set the buffer
-        al::alSourcei(
-            source_id,
-            ffi::AL_BUFFER,
-            sound_data::get_buffer(&*sound_data.borrow_mut()) as i32,
-        );
-
+        {
+            // we are not expecting threads to ever fail while holding the lock, so we `unwrap()`
+            let sd = sound_data.lock().unwrap();
+            al::alSourcei(
+                source_id,
+                ffi::AL_BUFFER,
+                sound_data::get_buffer(&sd) as i32,
+            );
+        }
         // Check if there is OpenAL internal error
         if let Some(err) = al::openal_has_error() {
             return Err(SoundError::InternalOpenALError(err));
         };
-
         Ok(Sound {
             al_source: source_id,
-            sound_data: sound_data,
+            sound_data,
         })
     }
 
@@ -160,7 +161,7 @@ impl Sound {
      * }
      * ```
      */
-    pub fn get_datas(&self) -> Rc<RefCell<SoundData>> {
+    pub fn get_datas(&self) -> Arc<Mutex<SoundData>> {
         self.sound_data.clone()
     }
 
@@ -183,7 +184,7 @@ impl Sound {
      * }
      * ```
      */
-    pub fn set_datas(&mut self, sound_data: Rc<RefCell<SoundData>>) {
+    pub fn set_datas(&mut self, sound_data: Arc<Mutex<SoundData>>) {
         check_openal_context!(());
 
         if self.is_playing() {
@@ -191,12 +192,15 @@ impl Sound {
         }
 
         // set the buffer
-        al::alSourcei(
-            self.al_source,
-            ffi::AL_BUFFER,
-            sound_data::get_buffer(&*sound_data.borrow()) as i32,
-        );
-
+        {
+            // we are not expecting threads to ever fail while holding the lock, so we `unwrap()`
+            let sd = sound_data.lock().unwrap();
+            al::alSourcei(
+                self.al_source,
+                ffi::AL_BUFFER,
+                sound_data::get_buffer(&sd) as i32,
+            );
+        }
         self.sound_data = sound_data
     }
 
@@ -272,7 +276,9 @@ impl AudioTags for Sound {
      * A borrowed pointer to the internal struct SoundTags
      */
     fn get_tags(&self) -> Tags {
-        (*self.sound_data).borrow().get_tags().clone()
+        // we are not expecting threads to ever fail while holding the lock, so we `unwrap()`
+        let sound_data = self.sound_data.lock().unwrap();
+        sound_data.get_tags().clone()
     }
 }
 
@@ -909,7 +915,9 @@ impl AudioController for Sound {
      * Returns the duration of the Sound.
      */
     fn get_duration(&self) -> Duration {
-        let data = self.sound_data.borrow();
+        // we are not expecting threads to ever fail while holding the lock, so we `unwrap()`
+        let sound_data = self.sound_data.lock().unwrap();
+        let data = sound_data;
         let snd_info = sound_data::get_sndinfo(&data);
 
         let frames = snd_info.frames as u64;
